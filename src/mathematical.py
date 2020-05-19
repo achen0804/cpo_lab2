@@ -79,8 +79,8 @@ class Interpreter(object):
                 op_stack.append(i)
                 continue
             if i == '(':
-                if flag2 == 1 and op_stack[-1] in unary_op:
-                    self.nodes.append('0')
+                #if flag2 == 1 and op_stack[-1] in unary_op:
+                    #self.nodes.append('0')
                 op_stack.append(i)
                 continue
             if i == ')':
@@ -109,7 +109,7 @@ class Interpreter(object):
                 node_stack.append(cur)
             elif i in unary_op:
                 cur = CalculateTreeNode(para=i)
-                cur.left = CalculateTreeNode(para='0')
+                # cur.left = CalculateTreeNode(para='0')
                 cur.right = node_stack.pop(-1)
                 node_stack.append(cur)
             else:
@@ -128,37 +128,53 @@ class Interpreter(object):
     def calculate(self, root):
         """calculate the value of node"""
         if root.para not in operators:
-            return int(root.para)
-        left_v = self.calculate(root.left)
-        right_v = self.calculate(root.right)
+            return float(root.para)
+
         if root.para == '+':
+            left_v = self.calculate(root.left)
+            right_v = self.calculate(root.right)
             self.event_history.append('{}+{}->{}'.format(left_v, right_v,left_v + right_v))
             return left_v + right_v
         elif root.para == '-':
+            left_v = self.calculate(root.left)
+            right_v = self.calculate(root.right)
             self.event_history.append('{}-{}->{}'.format(left_v, right_v, left_v-right_v))
             return left_v - right_v
         elif root.para == '*':
+            left_v = self.calculate(root.left)
+            right_v = self.calculate(root.right)
             self.event_history.append('{}*{}->{}'.format(left_v, right_v, left_v*right_v))
             return left_v * right_v
         elif root.para == '/':
+            left_v = self.calculate(root.left)
+            right_v = self.calculate(root.right)
             self.event_history.append('{}/{}->{}'.format(left_v, right_v, left_v/right_v))
             return left_v / right_v
         elif root.para == 'sin':
+            right_v = self.calculate(root.right)
             self.event_history.append('sin({})->{}'.format(right_v, sin(right_v)))
             return sin(right_v)
         elif root.para == 'cos':
+            right_v = self.calculate(root.right)
             self.event_history.append('cos({})->{}'.format(right_v, cos(right_v)))
             return cos(right_v)
         elif root.para == 'tan':
+            right_v = self.calculate(root.right)
             self.event_history.append('tan({})->{}'.format(right_v, tan(right_v)))
             return tan(right_v)
         elif root.para == 'log':
-            self.event_history.append('log({})->{}'.format(right_v, log(left_v,right_v)))
+            left_v = self.calculate(root.left)
+            right_v = self.calculate(root.right)
+            self.event_history.append('log({},{})->{}'.format(left_v, right_v, log(left_v, right_v)))
             return log(left_v, right_v)
         elif root.para == 'pow':
+            left_v = self.calculate(root.left)
+            right_v = self.calculate(root.right)
             self.event_history.append('pow({},{})->{}'.format(left_v, right_v, pow(left_v, right_v)))
             return pow(left_v, right_v)
         else:
+            left_v = self.calculate(root.left)
+            right_v = self.calculate(root.right)
             self.event_history.append('func({},{})->{}'.format(left_v, right_v, func(left_v, right_v)))
             return func(left_v, right_v)
 
@@ -166,7 +182,7 @@ class Interpreter(object):
         state = self._state_initialize()
         clock = 0
         self.state_history = [(clock, copy.copy(state))]
-
+        result_lst = list()
         for se in source_events:
             if limit == 0:
                 print('limit reached')
@@ -179,37 +195,34 @@ class Interpreter(object):
                 target_latency = self.outputs[se.out_port]
                 # self.event_history.append((clock, se.var, se.str))
                 self.to_RPN(se.str)
-                #  print(self.nodes)
+                #print(self.nodes)
                 root = self.generate_tree()
                 result = self.calculate(root)
                 clock = source_latency + target_latency
                 state[se.out_port] = result
                 self.state_history.append((clock, copy.copy(state)))
                 self.event_history.append('output {} -> {}'.format(se.str, result))
+                result_lst.append(self.state_history[-1][-1].get(se.out_port, 0))
+        return result_lst
 
     def check_result(self, *source_event):
-        self.execute(*source_event)
+        result_lst = self.execute(*source_event)
+        i = 0
         for se in source_event:
-            if se.out_port in self.outputs:
-                port = se.out_port
-                # print('{} -> {}'.format(se.str, self.state_history[-1][-1].get[se.out_port, 0]))
-                print('{} -> {}'.format(se.str, self.state_history[-1][-1].get(port, 0)))
+            print('{} -> {}'.format(se.str, result_lst[i]))
+            i += 1
+        return result_lst
 
-    #  have not test
-    def visualize(self, post_s):
+    def visualize(self):
         res = list()
         res.append('digraph G {')
-        #res.append(' rankdir=LR;')
+        res.append(' rankdir=BT;')
 
-        for v in self.inputs:
-            res.append(' {}[shape=rarrow];'.format(v))
-        for v in self.outputs:
-            res.append(' {}[shape=rarrow];'.format(v))
-        for i, n in enumerate(post_s):
-            res.append(' n_{}[label="{}"];'.format(i, post_s[i]))
+        for i, n in enumerate(self.nodes):
+            res.append(' n_{}[label="{}"];'.format(i, n))
 
         inter_stack = list()
-        for i, n in enumerate(post_s):
+        for i, n in enumerate(self.nodes):
             if n not in operators:
                 inter_stack.append('n_{}'.format(i))
             elif n in unary_op:
@@ -224,7 +237,9 @@ class Interpreter(object):
                 inter_stack.append('n_{}'.format(i))
 
         res.append('}')
-        return "\n".join(res)
+        file = open('pic.dot','w')
+        file.write("\n".join(res))
+        print("\n".join(res))
 
 
 class CalculateTreeNode(object):
@@ -232,32 +247,3 @@ class CalculateTreeNode(object):
         self.left = left
         self.right = right
         self.para = para
-
-
-"""
-test
-"""
-i = Interpreter('eval_interpreter')
-i.input_port('A', latency=1)
-i.output_port('B', latency=1)
-'''
-i.execute(
-    source_event('A', 'B', '2+1-(8/2)', 0),
-    source_event('A', 'B', 'sin(0)+func(4,5)*(5-1)', 5),
-
-)
-
-print('event history:')
-print(i.event_history)
-print('state history:')
-print(i.state_history)
-print(i.state_history[-1][-1].get('B', 0))
-'''
-
-i.check_result(
-    source_event('A', 'B', '2+1-(8/2)', 0),
-    source_event('A', 'B', 'sin(0)+func(4,5)*(5-1)', 5),
-)
-
-
-
