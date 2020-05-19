@@ -51,6 +51,7 @@ class MathTest(unittest.TestCase):
         i.output_port('B', latency=1)
         self.assertEqual(i.check_result(source_event('A', 'B', 'cos(0)+func(5,7)+pow(2,2)', 0)), [12.0])
         self.assertEqual(i.check_result(source_event('A', 'B', 'pow(3,2)+8/4', 4)), [11.0])
+        self.assertEqual(i.check_result(source_event('A','B','pow(2,3)',3)),[8.0])
 
 
 if __name__ == '__main__':
