@@ -33,6 +33,7 @@ if it is not operator, it will be a leaf node,if it is operator then it will be 
 will be its right and left node.
 
 7.Work demonstration (how to use developed software, how to test it), should be repeatable by an instructor by given command-line examples;
+![avatar](./fig/newnew_test.png)
 ![avatar](./fig/new_test.png)
 ![avatar](./fig/test.png)
 Abstract Syntax Tree:
@@ -51,6 +52,14 @@ Abstract Syntax Tree:
 4. 12-(cos((3-a)*b)+(func(c)+3))
 
 ![avatar](./ast/pic4.png)
+
+5. 12-(cos((3-a)*b)+(func(c)+3)) //a=3, b=5, c=7
+
+![avatar](./ast/pic5.png)
+
+5. func1(a,b)+func2(x,y,z) //a=1, b=2, x=3, y=4, z=5
+
+![avatar](./ast/pic6.png)
 
 8.Conclusion
 In this lab,we completed transform a string into Reverse Polish node and then transform it into tree
